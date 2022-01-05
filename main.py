@@ -37,17 +37,12 @@ class Checkout:
             else:
                 added_item_counts[item.name] = 1
 
-        print(added_item_counts)
-        print(added_item_prices)
-
         # Determine any special pricing rules that apply to the selected customer
         special_pricing = []
 
         for index, pricing_rule in self.pricing_rules.iterrows():
             if pricing_rule['Customer'] == self.customer:
                 special_pricing.append((pricing_rule['Product Name'],pricing_rule['Pricing']))
-
-        print(special_pricing)
 
         # We will need a copy of the item counts dict in case of conflicting multi-deals - need to apply the best one.
         offer_item_counts = {}
@@ -59,11 +54,9 @@ class Checkout:
                 if "->" in offer_pricing:
                     added_item_count = added_item_counts[offer_product]
                     high, low = offer_pricing.split("->")
-                    print(high, low)
                     deal_stacks = added_item_count // int(high)
                     remainder = added_item_count % int(high)
                     offer_item_count = deal_stacks * int(low) + remainder
-                    print(offer_item_count)
                     if offer_product in offer_item_counts.keys():
                         if offer_item_counts[offer_product] > offer_item_count:
                             offer_item_counts[offer_product] = offer_item_count
@@ -72,22 +65,19 @@ class Checkout:
 
                 # Handle direct discounts
                 elif added_item_prices[offer_product] > float(offer_pricing):
-                    added_item_prices[offer_product] = offer_pricing
+                    added_item_prices[offer_product] = float(offer_pricing)
 
         # Update the item counts based on the best available offer
         for offer_item in offer_item_counts.keys():
             if offer_item_counts[offer_item] < added_item_counts[offer_item]:
                 added_item_counts[offer_item] = offer_item_counts[offer_item]
 
-        print(added_item_counts)
-        print(added_item_prices)
-
         total = 0
 
         for item in added_item_counts.keys():
             total += added_item_counts[item] * added_item_prices[item]
 
-        print("Total:", total)
+        print("Total: $", total, sep='')
 
 
 # Item class is used to define each item that can be added to a checkout, along with its name, price, and description.
@@ -101,21 +91,60 @@ class Item:
         return self.name + " ($" + str(self.retail_price) + "): " + self.description
 
 
+# Load in item database
 items_df = pd.read_csv("data\\" + pricing_standard_file)
 items = []
-
 for index, row in items_df.iterrows():
     items.append(Item(row['Name'], row['Description'], row['Retail Price']))
 
+# This is purely to aid in testing - would be simplified with a GUI
+small = items[0]
+medium = items[1]
+large = items[2]
+
+# Case 1
+print("Case 1 (expecting $49.97)")
+co = Checkout(pricing_rules_file)
+co.add(small)
+co.add(medium)
+co.add(large)
+co.total()
+print("")
+
+# Case 2
+print("Case 2 (expecting $45.97)")
+co = Checkout(pricing_rules_file)
+co.set_customer('Microsoft')
+co.add(small)
+co.add(small)
+co.add(small)
+co.add(large)
+co.total()
+print("")
+
+# Case 3
+print("Case 3 (expecting $67.96)")
+co = Checkout(pricing_rules_file)
+co.set_customer('Amazon')
+co.add(medium)
+co.add(medium)
+co.add(medium)
+co.add(large)
+co.total()
+print("")
+
+# Case 4
+print("Case 4 (expecting $131.92)")
 co = Checkout(pricing_rules_file)
 co.set_customer('Facebook')
-co.add(items[0])
-co.add(items[1])
-co.add(items[0])
-co.add(items[2])
-co.add(items[1])
-co.add(items[1])
-co.add(items[2])
-co.add(items[1])
-co.add(items[1])
+co.add(small)
+co.add(medium)
+co.add(small)
+co.add(large)
+co.add(medium)
+co.add(medium)
+co.add(large)
+co.add(medium)
+co.add(medium)
 co.total()
+print("")
