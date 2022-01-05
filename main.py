@@ -10,6 +10,7 @@ class Checkout:
     def __init__(self, pricing_rules):
         self.items = []
         self.pricing_rules = pd.read_csv("data\\" + pricing_rules)
+        # print(self.pricing_rules)
         self.customer = "default"
 
     # Adds an item to the checkout
@@ -37,10 +38,17 @@ class Item:
         self.description = description
         self.retail_price = retail_price
 
+    def __str__(self):
+        return self.name + " ($" + str(self.retail_price) + "): " + self.description
 
-dummy_item = Item("Fries", "Yes, I would like fries with that", 5.99)
+
+items_df = pd.read_csv("data\\" + pricing_standard_file)
+items = []
+
+for index, row in items_df.iterrows():
+    items.append(Item(row['Name'], row['Description'], row['Retail Price']))
 
 co = Checkout(pricing_rules_file)
-co.add(dummy_item)
-co.add(dummy_item)
+co.add(items[0])
+co.add(items[1])
 co.total()
